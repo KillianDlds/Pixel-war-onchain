@@ -1,54 +1,62 @@
 import React, { useState } from "react";
 
-const PIXEL_COUNT = 50;   
-const PIXEL_SIZE = 12;   
+const PIXEL_COUNT = 30;
+const PIXEL_SIZE = 14;
 
-// Palette plus complète
 const PALETTE = [
   "#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff",
   "#ffff00", "#ff00ff", "#00ffff", "#ffa500", "#800080",
   "#808080", "#c0c0c0", "#800000", "#008000", "#000080",
-  "#808000", "#800080", "#008080", "#f0f8ff", "#faebd7"
 ];
 
 export default function PixelBoard() {
+
   const [pixels, setPixels] = useState(
-    Array(PIXEL_COUNT)
-      .fill(null)
-      .map(() => Array(PIXEL_COUNT).fill("#000000"))
+    Array(PIXEL_COUNT).fill(null).map(() => Array(PIXEL_COUNT).fill("#000000"))
   );
 
   const [selectedPixel, setSelectedPixel] = useState({ x: null, y: null });
   const [selectedColor, setSelectedColor] = useState("#000000");
 
-  const handlePixelClick = (x, y) => {
-    setSelectedPixel({ x, y });
-  };
+  const handlePixelClick = (x, y) => setSelectedPixel({ x, y });
 
   const applyColor = (color) => {
     if (selectedPixel.x === null || selectedPixel.y === null) return;
-
-    setPixels((prev) => {
-      const copy = prev.map((row) => [...row]);
+    setPixels(prev => {
+      const copy = prev.map(row => [...row]);
       copy[selectedPixel.y][selectedPixel.x] = color;
       return copy;
     });
   };
 
   return (
-    <div className="p-4" style={{ background: "#fff", minHeight: "100vh" }}>
-      <h2 className="mb-4 text-lg font-bold">Pixel Board {PIXEL_COUNT}×{PIXEL_COUNT}</h2>
+    <div
+      style={{
+        background: "#f0f0f0",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px"
+      }}
+    >
+      <h2 style={{ marginBottom: "20px", fontSize: "24px", fontWeight: "bold" }}>
+        Pixel Board {PIXEL_COUNT}×{PIXEL_COUNT}
+      </h2>
 
-      {/* Plateau */}
       <div
-        className="mb-4"
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
           gridTemplateRows: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
+          gap: "0px",
+          background: "#222",
+          padding: "2px",
+          borderRadius: "8px",
         }}
       >
-        {pixels.flatMap((row, y) =>
+        {pixels.map((row, y) =>
           row.map((color, x) => (
             <div
               key={`${x}-${y}`}
@@ -59,8 +67,8 @@ export default function PixelBoard() {
                 backgroundColor: color,
                 border:
                   selectedPixel.x === x && selectedPixel.y === y
-                    ? "1px solid #ff4444"
-                    : "1px solid #444",
+                    ? "2px solid #ff4444"
+                    : "1px solid #555",
                 boxSizing: "border-box",
                 cursor: "pointer",
               }}
@@ -69,14 +77,13 @@ export default function PixelBoard() {
         )}
       </div>
 
-      {/* Palette en une ligne */}
       <div
         style={{
-          display: "flex",
-          flexWrap: "nowrap",
-          overflowX: "auto",
+          display: "grid",
+          gridTemplateColumns: "repeat(10, 28px)",
+          gridAutoRows: "28px",
           gap: "4px",
-          padding: "4px 0",
+          marginTop: "20px",
         }}
       >
         {PALETTE.map((color) => (
@@ -84,21 +91,34 @@ export default function PixelBoard() {
             key={color}
             onClick={() => setSelectedColor(color)}
             style={{
-              width: 24,
-              height: 24,
+              width: "28px",
+              height: "28px",
               backgroundColor: color,
-              border: selectedColor === color ? "2px solid #000" : "1px solid #ccc",
+              border: selectedColor === color ? "3px solid #000" : "1px solid #ccc",
               cursor: "pointer",
-              flexShrink: 0,
+              borderRadius: "4px",
             }}
           />
         ))}
       </div>
 
-      {/* Bouton appliquer */}
       <button
         onClick={() => applyColor(selectedColor)}
-        className="bg-green-600 text-white px-4 py-2 rounded"
+        style={{
+          marginTop: "20px",
+          padding: "10px 24px",
+          backgroundColor: "#4CAF50",
+          color: "#fff",
+          border: "none",
+          borderRadius: "6px",
+          fontSize: "16px",
+          fontWeight: "bold",
+          cursor: "pointer",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.2)",
+          transition: "all 0.2s ease",
+        }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#45a049"}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#4CAF50"}
       >
         Appliquer la couleur
       </button>
