@@ -1,29 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const PIXEL_COUNT = 30;   
 const PIXEL_SIZE = 14;    
 
 const PALETTE = [
-  "#ffffff", // blanc
-  "#000000", // noir
-  "#ff0000", // rouge
-  "#00ff00", // vert
-  "#0000ff", // bleu
-  "#ffff00", // jaune
-  "#ff00ff", // magenta
-  "#00ffff", // cyan
-  "#ffa500", // orange
-  "#800080", // violet
-  "#808080", // gris moyen
-  "#c0c0c0", // gris clair
-  "#800000", // marron foncé
-  "#008000", // vert foncé
-  "#000080", // bleu foncé
-  "#f5f5dc", // beige
-  "#ff69b4", // rose
-  "#a52a2a", // brun
-  "#ffd700", // or
-  "#40e0d0", // turquoise
+  "#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff",
+  "#ffff00", "#ff00ff", "#00ffff", "#ffa500", "#800080",
+  "#808080", "#c0c0c0", "#800000", "#008000", "#000080",
+  "#f5f5dc", "#ff69b4", "#a52a2a", "#ffd700", "#40e0d0",
 ];
 
 export default function PixelBoard() {
@@ -34,17 +18,45 @@ export default function PixelBoard() {
 
   const [selectedPixel, setSelectedPixel] = useState({ x: null, y: null });
   const [selectedColor, setSelectedColor] = useState("#000000");
+  const [lastPlaced, setLastPlaced] = useState(0);
+
+  const [message, setMessage] = useState(""); 
 
   const handlePixelClick = (x, y) => setSelectedPixel({ x, y });
 
   const applyColor = (color) => {
     if (selectedPixel.x === null || selectedPixel.y === null) return;
+
+    const currentColor = pixels[selectedPixel.y][selectedPixel.x];
+    const now = Date.now();
+
+    if (currentColor === color) {
+      setMessage("Ce pixel est déjà de cette couleur !");
+      return;
+    }
+
+    if (now - lastPlaced < 5000) {
+      const waitTime = Math.ceil((5000 - (now - lastPlaced)) / 1000);
+      setMessage(`Veuillez attendre ${waitTime} secondes avant de placer un autre pixel`);
+      return;
+    }
+
     setPixels(prev => {
       const copy = prev.map(row => [...row]);
       copy[selectedPixel.y][selectedPixel.x] = color;
       return copy;
     });
+
+    setLastPlaced(now);
+    setMessage("Pixel placé !");
   };
+
+  // Efface le message après 3 secondes
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(""), 3000);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   return (
     <div
@@ -136,8 +148,24 @@ export default function PixelBoard() {
         onMouseEnter={e => e.currentTarget.style.backgroundColor="#45a049"}
         onMouseLeave={e => e.currentTarget.style.backgroundColor="#4CAF50"}
       >
-        Apply color
+        Appliquer la couleur
       </button>
+
+      {/* Message utilisateur */}
+      {message && (
+        <div
+          style={{
+            marginTop: "10px",
+            padding: "8px 12px",
+            backgroundColor: "#fffae6",
+            border: "1px solid #ffdd57",
+            borderRadius: "6px",
+            fontWeight: "bold",
+          }}
+        >
+          {message}
+        </div>
+      )}
     </div>
   );
 }
