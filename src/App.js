@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
-const PIXEL_COUNT = 50;   // nombre de pixels par ligne/colonne
-const PIXEL_SIZE = 12;    // taille en px d'un pixel
+const PIXEL_COUNT = 50;   
+const PIXEL_SIZE = 10;    
 
 const PALETTE = [
   "#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff",
@@ -9,11 +9,11 @@ const PALETTE = [
 ];
 
 export default function PixelBoard() {
-  // Initialiser les pixels en blanc
+  // Initialiser les pixels en noir
   const [pixels, setPixels] = useState(
     Array(PIXEL_COUNT)
       .fill(null)
-      .map(() => Array(PIXEL_COUNT).fill("#ffffff"))
+      .map(() => Array(PIXEL_COUNT).fill("#000000"))
   );
 
   const [selectedPixel, setSelectedPixel] = useState({ x: null, y: null });
@@ -34,7 +34,7 @@ export default function PixelBoard() {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4" style={{ background: "#fff", minHeight: "100vh" }}>
       <h2 className="mb-4 text-lg font-bold">Pixel Board {PIXEL_COUNT}×{PIXEL_COUNT}</h2>
 
       {/* Plateau */}
@@ -55,10 +55,9 @@ export default function PixelBoard() {
                 width: PIXEL_SIZE,
                 height: PIXEL_SIZE,
                 backgroundColor: color,
-                border:
-                  selectedPixel.x === x && selectedPixel.y === y
-                    ? "1px solid red"
-                    : "1px solid #ccc",
+                border: selectedPixel.x === x && selectedPixel.y === y
+                  ? "1px solid #ff4444" 
+                  : "1px solid #444",   
                 boxSizing: "border-box",
                 cursor: "pointer",
               }}
