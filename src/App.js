@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 
 const PIXEL_COUNT = 50;   
-const PIXEL_SIZE = 10;    
+const PIXEL_SIZE = 12;   
 
+// Palette plus complète
 const PALETTE = [
   "#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff",
-  "#ffff00", "#ff00ff", "#00ffff", "#ffa500", "#800080"
+  "#ffff00", "#ff00ff", "#00ffff", "#ffa500", "#800080",
+  "#808080", "#c0c0c0", "#800000", "#008000", "#000080",
+  "#808000", "#800080", "#008080", "#f0f8ff", "#faebd7"
 ];
 
 export default function PixelBoard() {
-  // Initialiser les pixels en noir
   const [pixels, setPixels] = useState(
     Array(PIXEL_COUNT)
       .fill(null)
@@ -55,9 +57,10 @@ export default function PixelBoard() {
                 width: PIXEL_SIZE,
                 height: PIXEL_SIZE,
                 backgroundColor: color,
-                border: selectedPixel.x === x && selectedPixel.y === y
-                  ? "1px solid #ff4444" 
-                  : "1px solid #444",   
+                border:
+                  selectedPixel.x === x && selectedPixel.y === y
+                    ? "1px solid #ff4444"
+                    : "1px solid #444",
                 boxSizing: "border-box",
                 cursor: "pointer",
               }}
@@ -66,8 +69,16 @@ export default function PixelBoard() {
         )}
       </div>
 
-      {/* Palette */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* Palette en une ligne */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "nowrap",
+          overflowX: "auto",
+          gap: "4px",
+          padding: "4px 0",
+        }}
+      >
         {PALETTE.map((color) => (
           <div
             key={color}
@@ -78,6 +89,7 @@ export default function PixelBoard() {
               backgroundColor: color,
               border: selectedColor === color ? "2px solid #000" : "1px solid #ccc",
               cursor: "pointer",
+              flexShrink: 0,
             }}
           />
         ))}
