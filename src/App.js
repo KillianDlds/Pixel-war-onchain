@@ -1,12 +1,29 @@
 import React, { useState } from "react";
 
-const PIXEL_COUNT = 30;
-const PIXEL_SIZE = 14;
+const PIXEL_COUNT = 30;   
+const PIXEL_SIZE = 14;    
 
 const PALETTE = [
-  "#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff",
-  "#ffff00", "#ff00ff", "#00ffff", "#ffa500", "#800080",
-  "#808080", "#c0c0c0", "#800000", "#008000", "#000080",
+  "#ffffff", // blanc
+  "#000000", // noir
+  "#ff0000", // rouge
+  "#00ff00", // vert
+  "#0000ff", // bleu
+  "#ffff00", // jaune
+  "#ff00ff", // magenta
+  "#00ffff", // cyan
+  "#ffa500", // orange
+  "#800080", // violet
+  "#808080", // gris moyen
+  "#c0c0c0", // gris clair
+  "#800000", // marron foncé
+  "#008000", // vert foncé
+  "#000080", // bleu foncé
+  "#f5f5dc", // beige
+  "#ff69b4", // rose
+  "#a52a2a", // brun
+  "#ffd700", // or
+  "#40e0d0", // turquoise
 ];
 
 export default function PixelBoard() {
@@ -37,13 +54,12 @@ export default function PixelBoard() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
         padding: "20px"
       }}
     >
-      <h2 style={{ marginBottom: "20px", fontSize: "24px", fontWeight: "bold" }}>
-        Pixel Board {PIXEL_COUNT}×{PIXEL_COUNT}
-      </h2>
+      <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "20px" }}>
+        On chain pixel war
+      </h1>
 
       <div
         style={{
@@ -117,10 +133,10 @@ export default function PixelBoard() {
           boxShadow: "0 4px 6px rgba(0,0,0,0.2)",
           transition: "all 0.2s ease",
         }}
-        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#45a049"}
-        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#4CAF50"}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor="#45a049"}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor="#4CAF50"}
       >
-        Appliquer la couleur
+        Apply color
       </button>
     </div>
   );
