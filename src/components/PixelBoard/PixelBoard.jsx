@@ -31,7 +31,7 @@ export default function PixelBoard() {
     };
 
     const connectMetaMask = async () => {
-        if (!window.ethereum) return showMessage("Veuillez installer MetaMask !");
+    if (!window.ethereum) return showMessage("Please install MetaMask!");
         try {
             const accounts = await window.ethereum.request({
                 method: "eth_requestAccounts",
@@ -48,7 +48,7 @@ export default function PixelBoard() {
                     break;
                 }
             }
-            if (!contractAddress) return showMessage("Contrat introuvable pour ce réseau");
+            if (!contractAddress) return showMessage("Contract not found for this network");
 
             const pixelContract = new w3.eth.Contract(PixelBoardABI, contractAddress);
             setContract(pixelContract);
@@ -58,10 +58,10 @@ export default function PixelBoard() {
             localStorage.setItem("pixelwar_account", accounts[0]);
             localStorage.setItem("pixelwar_connected", "true");
 
-            showMessage("Connecté et grille chargée !");
+            showMessage("Connected and grid loaded!");
         } catch (err) {
             console.error(err);
-            showMessage("Erreur connexion MetaMask");
+            showMessage("MetaMask connection error");
         }
     };
 
@@ -74,7 +74,7 @@ export default function PixelBoard() {
         localStorage.removeItem("pixelwar_account");
         localStorage.setItem("pixelwar_connected", "false");
 
-        showMessage("Wallet déconnecté");
+    showMessage("Wallet disconnected");
     };
 
     const loadPixelsFromChain = async (pixelContract) => {
@@ -89,7 +89,7 @@ export default function PixelBoard() {
                     newPixels[y][x] = uint32ToHexColor(color);
                 });
             } catch (err) {
-                console.warn(`Erreur lecture ligne ${y}:`, err);
+                console.warn(`Error reading row ${y}:`, err);
             }
         }
         setPixels(newPixels);
@@ -103,7 +103,7 @@ export default function PixelBoard() {
         const now = Date.now();
         if (now - lastPlaced < 60000) {
             const waitTime = Math.ceil((60000 - (now - lastPlaced)) / 1000);
-            return showMessage(`Veuillez attendre ${waitTime} secondes`);
+            return showMessage(`Please wait ${waitTime} seconds`);
         }
         setLastPlaced(now);
 
@@ -118,10 +118,10 @@ export default function PixelBoard() {
                 copy[selectedPixel.y][selectedPixel.x] = color;
                 return copy;
             });
-            showMessage("Pixel placé !");
+            showMessage("Pixel placed!");
         } catch (err) {
             console.error(err);
-            showMessage("Erreur lors de l'envoi du pixel");
+            showMessage("Error while sending pixel");
         }
     };
 
@@ -139,7 +139,7 @@ export default function PixelBoard() {
                 );
                 await loadPixelsFromChain(pixelContract);
             } catch (err) {
-                console.error("Erreur chargement initial:", err);
+                console.error("Initial loading error:", err);
             }
         };
         init();
@@ -158,7 +158,7 @@ export default function PixelBoard() {
                         await connectMetaMask();
                     }
                 } catch (err) {
-                    console.error("Erreur reconnexion:", err);
+                    console.error("Reconnection error:", err);
                 }
             }
         };
@@ -214,11 +214,11 @@ export default function PixelBoard() {
             )}
 
             {!account ? (
-                <button onClick={connectMetaMask} style={buttonStyle("#4CAF50")}>
+                <button onClick={connectMetaMask} style={buttonStyle("#4CAF50")}> 
                     Connect Wallet
                 </button>
             ) : (
-                <button onClick={disconnectWallet} style={buttonStyle("#f44336")}>
+                <button onClick={disconnectWallet} style={buttonStyle("#f44336")}> 
                     Disconnect ({account.slice(0, 6)}...{account.slice(-4)})
                 </button>
             )}
@@ -291,12 +291,25 @@ export default function PixelBoard() {
                 ))}
             </div>
 
-            <button
-                onClick={() => applyColor(selectedColor)}
-                style={{ ...buttonStyle("#2196F3"), marginTop: "20px" }}
-            >
-                Appliquer la couleur
-            </button>
+            {/* Bouton appliquer ou connect & apply */}
+            {/* Apply or Connect & Apply button */}
+            {!account ? (
+                <button
+                    onClick={async () => {
+                        await connectMetaMask();
+                    }}
+                    style={{ ...buttonStyle("#2196F3"), marginTop: "20px" }}
+                >
+                    Connect & Apply
+                </button>
+            ) : (
+                <button
+                    onClick={() => applyColor(selectedColor)}
+                    style={{ ...buttonStyle("#2196F3"), marginTop: "20px" }}
+                >
+                    Apply color
+                </button>
+            )}
 
             {message && (
                 <div
