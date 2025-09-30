@@ -16,7 +16,7 @@ export const NETWORKS = {
     contractAddress: "0x1234567890abcdef1234567890abcdef12345678",
   },
   baseSepolia: {
-    chainId: "0x14a4",
+    chainId: "0x14A34",
     chainName: "Base Sepolia Testnet",
     rpcUrls: ["https://sepolia.base.org"],
     blockExplorerUrls: ["https://sepolia-explorer.base.org"],
