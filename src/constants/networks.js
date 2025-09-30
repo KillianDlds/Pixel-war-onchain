@@ -21,6 +21,6 @@ export const NETWORKS = {
     rpcUrls: ["https://sepolia.base.org"],
     blockExplorerUrls: ["https://sepolia-explorer.base.org"],
     nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-    contractAddress: "0x1234567890abcdef1234567890abcdef12345678", 
+    contractAddress: "0x4Eabc806eF4c371eb1c61A1020F89768a96A12A9", 
   },
 };
