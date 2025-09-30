@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Web3 from "web3";
 import { NETWORKS } from "./constants/networks";
+import { PALETTE } from "./constants/palette";
 
 const PIXEL_COUNT = 30;
 const PIXEL_SIZE = 14;
-
-const PALETTE = [
-  "#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff",
-  "#ffff00", "#ff00ff", "#00ffff", "#ffa500", "#800080",
-  "#808080", "#c0c0c0", "#800000", "#008000", "#000080",
-  "#f5f5dc", "#ff69b4", "#a52a2a", "#ffd700", "#40e0d0",
-];
 
 export default function PixelBoard() {
   const [pixels, setPixels] = useState(
