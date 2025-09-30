@@ -1,0 +1,67 @@
+[
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_width", "type": "uint256" },
+      { "internalType": "uint256", "name": "_height", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "height",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "x", "type": "uint256" },
+      { "internalType": "uint256", "name": "y", "type": "uint256" }
+    ],
+    "name": "getPixel",
+    "outputs": [
+      { "internalType": "uint32", "name": "color", "type": "uint32" },
+      { "internalType": "uint256", "name": "lastChanged", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "y", "type": "uint256" }],
+    "name": "getRow",
+    "outputs": [{ "internalType": "uint32[]", "name": "colors", "type": "uint32[]" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "width",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "x", "type": "uint256" },
+      { "internalType": "uint256", "name": "y", "type": "uint256" },
+      { "internalType": "uint32", "name": "color", "type": "uint32" }
+    ],
+    "name": "setPixel",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "internalType": "uint256", "name": "x", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "y", "type": "uint256" },
+      { "indexed": false, "internalType": "uint32", "name": "color", "type": "uint32" },
+      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+    ],
+    "name": "PixelUpdated",
+    "type": "event"
+  }
+]

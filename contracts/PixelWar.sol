@@ -36,4 +36,12 @@ contract PixelWar {
 
         emit PixelUpdated(x, y, color, msg.sender, block.timestamp);
     }
+
+    function getRow(uint256 y) external view returns (uint32[] memory colors) {
+        require(y < height, "Invalid row");
+        colors = new uint32[](width);
+        for (uint256 x = 0; x < width; x++) {
+            colors[x] = pixels[x + y * width].color;
+        }
+    }
 }
