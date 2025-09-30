@@ -23,6 +23,7 @@ export default function PixelBoard() {
     const [contract, setContract] = useState(null);
     const [message, setMessage] = useState("");
     const [lastPlaced, setLastPlaced] = useState(0);
+    const [loading, setLoading] = useState(false);
 
     const showMessage = (msg) => {
         setMessage(msg);
@@ -77,6 +78,7 @@ export default function PixelBoard() {
     };
 
     const loadPixelsFromChain = async (pixelContract) => {
+        setLoading(true);
         const newPixels = Array(PIXEL_COUNT)
             .fill(null)
             .map(() => Array(PIXEL_COUNT).fill("#000000"));
@@ -91,6 +93,7 @@ export default function PixelBoard() {
             }
         }
         setPixels(newPixels);
+        setLoading(false);
     };
 
     const handlePixelClick = (x, y) => setSelectedPixel({ x, y });
@@ -177,6 +180,38 @@ export default function PixelBoard() {
             <h1 style={{ fontSize: "26px", fontWeight: "600", marginBottom: "16px" }}>
                 🎨 On-Chain Pixel War
             </h1>
+            {loading && (
+                <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "40px 0 30px 0"
+                }}>
+                    <div style={{
+                        width: 54,
+                        height: 54,
+                        border: "7px solid #e0e0e0",
+                        borderTop: "7px solid #2196F3",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite"
+                    }}
+                    className="pixelwar-spinner"
+                    />
+                    <div style={{marginTop: 18, fontWeight: 600, color: "#2196F3", fontSize: "18px", letterSpacing:1}}>
+                        Loading grid…
+                    </div>
+                    <style>{`
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                        .pixelwar-spinner {
+                            box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+                        }
+                    `}</style>
+                </div>
+            )}
 
             {!account ? (
                 <button onClick={connectMetaMask} style={buttonStyle("#4CAF50")}>
@@ -189,39 +224,41 @@ export default function PixelBoard() {
             )}
 
             {/* Plateau */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
-                    gridTemplateRows: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
-                    gap: "0px",
-                    background: "#2c2c2c",
-                    padding: "6px",
-                    borderRadius: "12px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                    marginTop: "20px",
-                }}
-            >
-                {pixels.map((row, y) =>
-                    row.map((color, x) => (
-                        <div
-                            key={`${x}-${y}`}
-                            onClick={() => handlePixelClick(x, y)}
-                            style={{
-                                width: PIXEL_SIZE,
-                                height: PIXEL_SIZE,
-                                backgroundColor: color,
-                                border:
-                                    selectedPixel.x === x && selectedPixel.y === y
-                                        ? "1px solid #ff4444"
-                                        : "1px solid #444",
-                                boxSizing: "border-box",
-                                cursor: "pointer",
-                            }}
-                        />
-                    ))
-                )}
-            </div>
+            {!loading && (
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
+                        gridTemplateRows: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
+                        gap: "0px",
+                        background: "#2c2c2c",
+                        padding: "6px",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        marginTop: "20px",
+                    }}
+                >
+                    {pixels.map((row, y) =>
+                        row.map((color, x) => (
+                            <div
+                                key={`${x}-${y}`}
+                                onClick={() => handlePixelClick(x, y)}
+                                style={{
+                                    width: PIXEL_SIZE,
+                                    height: PIXEL_SIZE,
+                                    backgroundColor: color,
+                                    border:
+                                        selectedPixel.x === x && selectedPixel.y === y
+                                            ? "1px solid #ff4444"
+                                            : "1px solid #444",
+                                    boxSizing: "border-box",
+                                    cursor: "pointer",
+                                }}
+                            />
+                        ))
+                    )}
+                </div>
+            )}
 
             {/* Palette */}
             <div
