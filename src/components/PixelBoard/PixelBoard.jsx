@@ -122,33 +122,124 @@ export default function PixelBoard() {
     init();
   }, []);
 
+ 
   return (
-    <div style={{ background: "#f0f0f0", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: "20px" }}>
-      <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "20px" }}>On chain pixel war</h1>
+    <div
+  style={{
+    height: "100%", 
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    padding: "20px",
+    boxSizing: "border-box",
+  }}
+>
+      <h1 style={{ fontSize: "26px", fontWeight: "600", marginBottom: "16px" }}>
+        🎨 On-Chain Pixel War
+      </h1>
 
       {!account ? (
-        <button onClick={connectMetaMask} style={{ marginBottom:"20px", padding:"10px 24px", backgroundColor:"#4CAF50", color:"#fff", border:"none", borderRadius:"6px", fontSize:"16px", fontWeight:"bold", cursor:"pointer" }}>
+        <button onClick={connectMetaMask} style={buttonStyle("#4CAF50")}>
           Connect Wallet
         </button>
       ) : (
-        <button onClick={disconnectWallet} style={{ marginBottom:"20px", padding:"10px 24px", backgroundColor:"#f44336", color:"#fff", border:"none", borderRadius:"6px", fontSize:"16px", fontWeight:"bold", cursor:"pointer" }}>
-          Disconnect ({account.slice(0,6)}...{account.slice(-4)})
+        <button onClick={disconnectWallet} style={buttonStyle("#f44336")}>
+          Disconnect ({account.slice(0, 6)}...{account.slice(-4)})
         </button>
       )}
 
-      <div style={{ display:"grid", gridTemplateColumns:`repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`, gridTemplateRows:`repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`, gap:"0px", background:"#222", padding:"2px", borderRadius:"8px" }}>
-        {pixels.map((row, y) => row.map((color, x) => (
-          <Pixel key={`${x}-${y}`} color={color} selected={selectedPixel.x===x && selectedPixel.y===y} size={PIXEL_SIZE} onClick={()=>handlePixelClick(x,y)} />
-        )))}
+      {/* Plateau */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
+        gridTemplateRows: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
+        gap: "0px",
+        background: "#2c2c2c",   // gris foncé, contraste avec fond clair
+        padding: "6px",
+        borderRadius: "12px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        marginTop: "20px",
+      }}>
+        {pixels.map((row, y) =>
+          row.map((color, x) => (
+            <div
+              key={`${x}-${y}`}
+              onClick={() => handlePixelClick(x, y)}
+              style={{
+                width: PIXEL_SIZE,
+                height: PIXEL_SIZE,
+                backgroundColor: color,
+                border: selectedPixel.x === x && selectedPixel.y === y
+                  ? "1px solid #ff4444"
+                  : "1px solid #444",
+                boxSizing: "border-box",
+                cursor: "pointer",
+              }}
+            />
+          ))
+        )}
       </div>
 
-      <Palette palette={PALETTE} selectedColor={selectedColor} onSelect={setSelectedColor} />
+      {/* Palette */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(10,28px)",
+        gridAutoRows: "28px",
+        gap: "6px",
+        marginTop: "24px",
+        padding: "12px",
+        background: "#fff",
+        borderRadius: "10px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+      }}>
+        {PALETTE.map(color => (
+          <div
+            key={color}
+            onClick={() => setSelectedColor(color)}
+            style={{
+              width: "28px",
+              height: "28px",
+              backgroundColor: color,
+              border: selectedColor === color ? "3px solid #000" : "1px solid #ccc",
+              cursor: "pointer",
+              borderRadius: "6px",
+            }}
+          />
+        ))}
+      </div>
 
-      <button onClick={()=>applyColor(selectedColor)} style={{ marginTop:"20px", padding:"10px 24px", backgroundColor:"#4CAF50", color:"#fff", border:"none", borderRadius:"6px", fontSize:"16px", fontWeight:"bold", cursor:"pointer" }}>
+      <button onClick={() => applyColor(selectedColor)} style={{ ...buttonStyle("#2196F3"), marginTop: "20px" }}>
         Appliquer la couleur
       </button>
 
-      {message && <div style={{ marginTop:"10px", padding:"8px 12px", backgroundColor:"#fffae6", border:"1px solid #ffdd57", borderRadius:"6px", fontWeight:"bold" }}>{message}</div>}
+      {message && (
+        <div style={{
+          marginTop: "14px",
+          padding: "10px 16px",
+          backgroundColor: "#fffbe6",
+          border: "1px solid #ffe58f",
+          borderRadius: "8px",
+          fontWeight: "500",
+          color: "#333",
+        }}>
+          {message}
+        </div>
+      )}
     </div>
   );
 }
+
+const buttonStyle = (bg) => ({
+  marginBottom: "16px",
+  padding: "10px 20px",
+  backgroundColor: bg,
+  color: "#fff",
+  border: "none",
+  borderRadius: "8px",
+  fontSize: "15px",
+  fontWeight: "600",
+  cursor: "pointer",
+  boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
+  transition: "background 0.2s ease-in-out",
+});
