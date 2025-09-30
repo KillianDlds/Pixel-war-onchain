@@ -1,11 +1,11 @@
 export const NETWORKS = {
-  mainnet: {
+  celoMainnet: {
     chainId: "0xa4ec",
     chainName: "Celo Mainnet",
     rpcUrls: ["https://forno.celo.org"],
     blockExplorerUrls: ["https://celoscan.io"],
     nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
-    contractAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    contractAddress: "0x698b374C3B664EB5ae7A87f38CB4909eAE1231c1",
   },
   sepolia: {
     chainId: "0xAA044C",

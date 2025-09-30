@@ -130,12 +130,12 @@ export default function PixelBoard() {
         const init = async () => {
             try {
                 const provider = new Web3.providers.HttpProvider(
-                    NETWORKS.baseSepolia.rpcUrls[0]
+                    NETWORKS.celoMainnet.rpcUrls[0]
                 );
                 const w3 = new Web3(provider);
                 const pixelContract = new w3.eth.Contract(
                     PixelBoardABI,
-                    NETWORKS.baseSepolia.contractAddress
+                    NETWORKS.celoMainnet.contractAddress
                 );
                 await loadPixelsFromChain(pixelContract);
             } catch (err) {
