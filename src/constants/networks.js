@@ -7,7 +7,7 @@ export const NETWORKS = {
     nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
     contractAddress: "0x698b374C3B664EB5ae7A87f38CB4909eAE1231c1",
   },
-  sepolia: {
+  celoSepolia: {
     chainId: "0xAA044C",
     chainName: "Celo Sepolia Testnet",
     rpcUrls: ["https://forno.celo-sepolia.celo-testnet.org/"],
@@ -22,5 +22,13 @@ export const NETWORKS = {
     blockExplorerUrls: ["https://sepolia-explorer.base.org"],
     nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
     contractAddress: "0x3ddc57f7d49c74d76f39a9623fece342e82fe3cd", 
+  },
+  baseMainnet: {
+    chainId: "0x2105",
+    chainName: "Base Sepolia Testnet",
+    rpcUrls: ["https://mainnet.base.org"],
+    blockExplorerUrls: ["	https://base.blockscout.com/"],
+    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+    contractAddress: "0x2f6326006f29f6c78791b09a9c9911a56df83300", 
   },
 };

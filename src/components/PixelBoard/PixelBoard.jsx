@@ -31,7 +31,25 @@ export default function PixelBoard() {
     };
 
     const connectMetaMask = async () => {
-    if (!window.ethereum) return showMessage("Please install MetaMask!");
+        if (!window.ethereum) return showMessage("Please install MetaMask!");
+        try {
+            // Force switch to baseMainnet
+            await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: NETWORKS.baseMainnet.chainId }],
+            });
+        } catch (e) {
+            // If not added, try to add the network
+            if (e.code === 4902) {
+                const { contractAddress, ...networkParams } = NETWORKS.baseMainnet;
+                await window.ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [networkParams],
+                });
+            } else {
+                return showMessage("Failed to switch to Base Mainnet");
+            }
+        }
         try {
             const accounts = await window.ethereum.request({
                 method: "eth_requestAccounts",
@@ -40,21 +58,11 @@ export default function PixelBoard() {
             setWeb3(w3);
             setAccount(accounts[0]);
 
-            const chainId = await window.ethereum.request({ method: "eth_chainId" });
-            let contractAddress;
-            for (const key in NETWORKS) {
-                if (NETWORKS[key].chainId.toLowerCase() === chainId.toLowerCase()) {
-                    contractAddress = NETWORKS[key].contractAddress;
-                    break;
-                }
-            }
-            if (!contractAddress) return showMessage("Contract not found for this network");
-
-            const pixelContract = new w3.eth.Contract(PixelBoardABI, contractAddress);
+            // Always use baseMainnet
+            const pixelContract = new w3.eth.Contract(PixelBoardABI, NETWORKS.baseMainnet.contractAddress);
             setContract(pixelContract);
             await loadPixelsFromChain(pixelContract);
 
-            // Sauvegarde connexion
             localStorage.setItem("pixelwar_account", accounts[0]);
             localStorage.setItem("pixelwar_connected", "true");
 
@@ -74,7 +82,7 @@ export default function PixelBoard() {
         localStorage.removeItem("pixelwar_account");
         localStorage.setItem("pixelwar_connected", "false");
 
-    showMessage("Wallet disconnected");
+        showMessage("Wallet disconnected");
     };
 
     const loadPixelsFromChain = async (pixelContract) => {
@@ -99,13 +107,30 @@ export default function PixelBoard() {
     const handlePixelClick = (x, y) => setSelectedPixel({ x, y });
 
     const applyColor = async (color) => {
+        if (!window.ethereum) return showMessage("Please install MetaMask!");
+        // Force switch to baseMainnet before applying
+        try {
+            await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: NETWORKS.baseMainnet.chainId }],
+            });
+        } catch (e) {
+            if (e.code === 4902) {
+                const { contractAddress, ...networkParams } = NETWORKS.baseMainnet;
+                await window.ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [networkParams],
+                });
+            } else {
+                return showMessage("Failed to switch to Base Mainnet");
+            }
+        }
         if (!contract || !account || selectedPixel.x === null) return;
         const now = Date.now();
         if (now - lastPlaced < 60000) {
             const waitTime = Math.ceil((60000 - (now - lastPlaced)) / 1000);
             return showMessage(`Please wait ${waitTime} seconds`);
         }
-        setLastPlaced(now);
 
         try {
             const colorInt = parseInt(color.replace("#", ""), 16);
@@ -113,6 +138,7 @@ export default function PixelBoard() {
                 .setPixel(selectedPixel.x, selectedPixel.y, colorInt)
                 .send({ from: account });
 
+            setLastPlaced(Date.now());
             setPixels((prev) => {
                 const copy = prev.map((row) => [...row]);
                 copy[selectedPixel.y][selectedPixel.x] = color;
@@ -130,12 +156,12 @@ export default function PixelBoard() {
         const init = async () => {
             try {
                 const provider = new Web3.providers.HttpProvider(
-                    NETWORKS.celoMainnet.rpcUrls[0]
+                    NETWORKS.baseMainnet.rpcUrls[0]
                 );
                 const w3 = new Web3(provider);
                 const pixelContract = new w3.eth.Contract(
                     PixelBoardABI,
-                    NETWORKS.celoMainnet.contractAddress
+                    NETWORKS.baseMainnet.contractAddress
                 );
                 await loadPixelsFromChain(pixelContract);
             } catch (err) {
@@ -196,9 +222,9 @@ export default function PixelBoard() {
                         borderRadius: "50%",
                         animation: "spin 1s linear infinite"
                     }}
-                    className="pixelwar-spinner"
+                        className="pixelwar-spinner"
                     />
-                    <div style={{marginTop: 18, fontWeight: 600, color: "#2196F3", fontSize: "18px", letterSpacing:1}}>
+                    <div style={{ marginTop: 18, fontWeight: 600, color: "#2196F3", fontSize: "18px", letterSpacing: 1 }}>
                         Loading grid…
                     </div>
                     <style>{`
@@ -214,11 +240,11 @@ export default function PixelBoard() {
             )}
 
             {!account ? (
-                <button onClick={connectMetaMask} style={buttonStyle("#4CAF50")}> 
+                <button onClick={connectMetaMask} style={buttonStyle("#4CAF50")}>
                     Connect Wallet
                 </button>
             ) : (
-                <button onClick={disconnectWallet} style={buttonStyle("#f44336")}> 
+                <button onClick={disconnectWallet} style={buttonStyle("#f44336")}>
                     Disconnect ({account.slice(0, 6)}...{account.slice(-4)})
                 </button>
             )}
