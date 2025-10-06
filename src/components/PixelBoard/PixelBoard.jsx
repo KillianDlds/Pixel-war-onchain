@@ -1,85 +1,81 @@
-import React, { useState, useEffect } from "react";
-import Web3 from "web3";
+import React, { useEffect, useState, useCallback } from "react";
 import PixelBoardABI from "../../PixelWarABI.json";
 import { PALETTE } from "../../constants/palette";
-import { useAppKit } from "@reown/appkit/react";
+import Web3 from "web3";
+import { useAccount } from "wagmi";
+import { openConnectModal } from "../../librairies/appKit";
 
-// Constantes de configuration
 const PIXEL_COUNT = 30;
 const PIXEL_SIZE = 14;
 const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS_BASE_SEPOLIA;
-const RPC_URL = process.env.REACT_APP_RPC_URL_BASE_SEPOLIA || "https://sepolia.base.org";
 
-const uint32ToHexColor = (uint32Color) => {
-    const n = Number(uint32Color);
-    return "#" + n.toString(16).padStart(6, "0").slice(-6);
-};
+const uint32ToHexColor = (uint32Color) =>
+    "#" + Number(uint32Color).toString(16).padStart(6, "0").slice(-6);
 
 export default function PixelBoard() {
+    const { address, isConnected } = useAccount();
+
     const [pixels, setPixels] = useState(
         Array(PIXEL_COUNT).fill(null).map(() => Array(PIXEL_COUNT).fill("#000000"))
     );
     const [selectedPixel, setSelectedPixel] = useState({ x: null, y: null });
     const [selectedColor, setSelectedColor] = useState("#000000");
-    const [contract, setContract] = useState(null);
-    const [lastPlaced, setLastPlaced] = useState(0);
-    const [loading, setLoading] = useState(false);
+    const [loadingGrid, setLoadingGrid] = useState(false);
     const [message, setMessage] = useState("");
-
-    const { connected, account, provider } = useAppKit();
-    const [web3, setWeb3] = useState(null);
+    const [lastPlaced, setLastPlaced] = useState(0);
+    const [isSending, setIsSending] = useState(false);
 
     const showMessage = (msg) => {
         setMessage(msg);
         setTimeout(() => setMessage(""), 3000);
     };
 
-    // Initialisation du Web3 et du contrat
-    useEffect(() => {
-        const init = async () => {
-            try {
-                const w3 = new Web3(provider || new Web3.providers.HttpProvider(RPC_URL));
-                setWeb3(w3);
+    // Charger la grille depuis la blockchain
+    const loadPixelsFromChain = useCallback(async () => {
+        setLoadingGrid(true);
+        try {
+            const w3 = new Web3(window.ethereum || null);
+            if (!w3) throw new Error("No provider found");
+            const contract = new w3.eth.Contract(PixelBoardABI, CONTRACT_ADDRESS);
 
-                const pixelContract = new w3.eth.Contract(PixelBoardABI, CONTRACT_ADDRESS);
-                setContract(pixelContract);
+            const newPixels = Array(PIXEL_COUNT)
+                .fill(null)
+                .map(() => Array(PIXEL_COUNT).fill("#000000"));
 
-                await loadPixelsFromChain(pixelContract);
-            } catch (err) {
-                console.error("Error initializing Web3:", err);
-                showMessage("Failed to connect to the blockchain");
+            for (let y = 0; y < PIXEL_COUNT; y++) {
+                try {
+                    const row = await contract.methods.getRow(y).call();
+                    row.forEach((color, x) => {
+                        newPixels[y][x] = uint32ToHexColor(color);
+                    });
+                } catch (err) {
+                    console.warn(`Error reading row ${y}:`, err);
+                }
             }
-        };
-        init();
-    }, [provider]);
 
-    const loadPixelsFromChain = async (pixelContract) => {
-        setLoading(true);
-        const newPixels = Array(PIXEL_COUNT)
-            .fill(null)
-            .map(() => Array(PIXEL_COUNT).fill("#000000"));
-
-        for (let y = 0; y < PIXEL_COUNT; y++) {
-            try {
-                const row = await pixelContract.methods.getRow(y).call();
-                row.forEach((color, x) => {
-                    newPixels[y][x] = uint32ToHexColor(color);
-                });
-            } catch (err) {
-                console.warn(`Error reading row ${y}:`, err);
-            }
+            setPixels(newPixels);
+        } catch (err) {
+            console.error(err);
+            showMessage("Erreur lors du chargement de la grille");
+        } finally {
+            setLoadingGrid(false);
         }
-        setPixels(newPixels);
-        setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        loadPixelsFromChain();
+    }, [loadPixelsFromChain]);
 
     const handlePixelClick = (x, y) => setSelectedPixel({ x, y });
 
-    const applyColor = async (color) => {
-        if (!contract || !connected) {
+    // Fonction qui déclenche la transaction
+    const handleApplyColor = async () => {
+        if (!isConnected) {
+            openConnectModal();
             showMessage("Connect wallet first!");
             return;
         }
+
         if (selectedPixel.x === null) {
             showMessage("Select a pixel first!");
             return;
@@ -88,41 +84,49 @@ export default function PixelBoard() {
         const now = Date.now();
         if (now - lastPlaced < 60000) {
             const waitTime = Math.ceil((60000 - (now - lastPlaced)) / 1000);
-            return showMessage(`Please wait ${waitTime} seconds`);
+            showMessage(`Please wait ${waitTime} seconds`);
+            return;
         }
 
         try {
-            const colorInt = parseInt(color.replace("#", ""), 16);
+            setIsSending(true);
+
+            const w3 = new Web3(window.ethereum);
+            const contract = new w3.eth.Contract(PixelBoardABI, CONTRACT_ADDRESS);
+            const colorInt = parseInt(selectedColor.replace("#", ""), 16);
+
             await contract.methods
                 .setPixel(selectedPixel.x, selectedPixel.y, colorInt)
-                .send({ from: account });
+                .send({ from: address });
 
             setLastPlaced(Date.now());
-            setPixels((prev) => {
-                const copy = prev.map((row) => [...row]);
-                copy[selectedPixel.y][selectedPixel.x] = color;
-                return copy;
-            });
-            showMessage("Pixel placed!");
+            showMessage("Pixel placé ✅");
+            loadPixelsFromChain();
         } catch (err) {
             console.error(err);
-            showMessage("Error placing pixel");
+            showMessage("Erreur transaction");
+        } finally {
+            setIsSending(false);
         }
     };
 
     return (
-        <div style={{ padding: "20px", textAlign: "center" }}>
-            {!loading && (
+        <div style={{ padding: 20, textAlign: "center" }}>
+            <h2 style={{ marginBottom: 12 }}>On-Chain Pixel War</h2>
+
+            {/* Grid */}
+            {loadingGrid ? (
+                <div style={{ margin: 24 }}>Loading grid…</div>
+            ) : (
                 <div
                     style={{
                         display: "grid",
                         gridTemplateColumns: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
-                        gridTemplateRows: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
-                        gap: "0px",
-                        padding: "6px",
-                        borderRadius: "12px",
-                        marginTop: "20px",
+                        gap: 0,
                         justifyContent: "center",
+                        borderRadius: 8,
+                        padding: 6,
+                        background: "#222",
                     }}
                 >
                     {pixels.map((row, y) =>
@@ -137,7 +141,7 @@ export default function PixelBoard() {
                                     border:
                                         selectedPixel.x === x && selectedPixel.y === y
                                             ? "2px solid #ff4444"
-                                            : "1px solid #444",
+                                            : "1px solid #333",
                                     cursor: "pointer",
                                     boxSizing: "border-box",
                                 }}
@@ -153,50 +157,56 @@ export default function PixelBoard() {
                     display: "grid",
                     gridTemplateColumns: "repeat(10,28px)",
                     gridAutoRows: "28px",
-                    gap: "6px",
-                    marginTop: "24px",
+                    gap: 6,
+                    marginTop: 18,
                     justifyContent: "center",
                 }}
             >
-                {PALETTE.map((color) => (
+                {PALETTE.map((c) => (
                     <div
-                        key={color}
-                        onClick={() => setSelectedColor(color)}
+                        key={c}
+                        onClick={() => setSelectedColor(c)}
                         style={{
-                            width: "28px",
-                            height: "28px",
-                            backgroundColor: color,
-                            border: selectedColor === color ? "3px solid #000" : "1px solid #ccc",
-                            cursor: "pointer",
-                            borderRadius: "6px",
+                            width: 28,
+                            height: 28,
+                            backgroundColor: c,
+                            border: selectedColor === c ? "3px solid #000" : "1px solid #ccc",
+                            cursor: isSending ? "not-allowed" : "pointer",
+                            borderRadius: 6,
                         }}
                     />
                 ))}
             </div>
 
-            <button
-                onClick={() => applyColor(selectedColor)}
-                style={{
-                    ...buttonStyle("#2196F3"),
-                    marginTop: "20px",
-                    opacity: connected ? 1 : 0.6,
-                    cursor: connected ? "pointer" : "not-allowed",
-                }}
-                disabled={!connected}
-            >
-                Apply color
-            </button>
+            {/* Apply button */}
+            <div style={{ marginTop: 16 }}>
+                <button
+                    onClick={handleApplyColor}
+                    disabled={selectedPixel.x === null || isSending}
+                    style={{
+                        padding: "10px 18px",
+                        background: selectedPixel.x !== null ? "#1976d2" : "#999",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 8,
+                        cursor: selectedPixel.x !== null ? "pointer" : "not-allowed",
+                        opacity: selectedPixel.x !== null ? 1 : 0.6,
+                    }}
+                >
+                    {isSending ? "Sending…" : "Apply color"}
+                </button>
+            </div>
 
+            {/* Status */}
             {message && (
                 <div
                     style={{
-                        marginTop: "14px",
-                        padding: "10px 16px",
-                        backgroundColor: "#fffbe6",
+                        marginTop: 12,
+                        padding: "8px 12px",
+                        background: "#fffbe6",
                         border: "1px solid #ffe58f",
-                        borderRadius: "8px",
-                        fontWeight: "500",
-                        color: "#333",
+                        borderRadius: 8,
+                        display: "inline-block",
                     }}
                 >
                     {message}
@@ -205,15 +215,3 @@ export default function PixelBoard() {
         </div>
     );
 }
-
-const buttonStyle = (bg) => ({
-    padding: "10px 20px",
-    margin: "10px",
-    backgroundColor: bg,
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
-});
