@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import Web3 from "web3";
-import { NETWORKS } from "../../constants/networks";
 import PixelBoardABI from "../../PixelWarABI.json";
 import { PALETTE } from "../../constants/palette";
+import { useAppKit } from "@reown/appkit/react";
 
+// Constantes de configuration
 const PIXEL_COUNT = 30;
 const PIXEL_SIZE = 14;
+const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS_BASE_SEPOLIA;
+const RPC_URL = process.env.REACT_APP_RPC_URL_BASE_SEPOLIA || "https://sepolia.base.org";
 
 const uint32ToHexColor = (uint32Color) => {
     const n = Number(uint32Color);
@@ -18,78 +21,44 @@ export default function PixelBoard() {
     );
     const [selectedPixel, setSelectedPixel] = useState({ x: null, y: null });
     const [selectedColor, setSelectedColor] = useState("#000000");
-    const [account, setAccount] = useState(null);
-    const [web3, setWeb3] = useState(null);
     const [contract, setContract] = useState(null);
-    const [message, setMessage] = useState("");
     const [lastPlaced, setLastPlaced] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState("");
+
+    const { connected, account, provider } = useAppKit();
+    const [web3, setWeb3] = useState(null);
 
     const showMessage = (msg) => {
         setMessage(msg);
         setTimeout(() => setMessage(""), 3000);
     };
 
-    const connectMetaMask = async () => {
-        if (!window.ethereum) return showMessage("Please install MetaMask!");
-        try {
-            // Force switch to baseMainnet
-            await window.ethereum.request({
-                method: "wallet_switchEthereumChain",
-                params: [{ chainId: NETWORKS.baseMainnet.chainId }],
-            });
-        } catch (e) {
-            // If not added, try to add the network
-            if (e.code === 4902) {
-                const { contractAddress, ...networkParams } = NETWORKS.baseMainnet;
-                await window.ethereum.request({
-                    method: "wallet_addEthereumChain",
-                    params: [networkParams],
-                });
-            } else {
-                return showMessage("Failed to switch to Base Mainnet");
+    // Initialisation du Web3 et du contrat
+    useEffect(() => {
+        const init = async () => {
+            try {
+                const w3 = new Web3(provider || new Web3.providers.HttpProvider(RPC_URL));
+                setWeb3(w3);
+
+                const pixelContract = new w3.eth.Contract(PixelBoardABI, CONTRACT_ADDRESS);
+                setContract(pixelContract);
+
+                await loadPixelsFromChain(pixelContract);
+            } catch (err) {
+                console.error("Error initializing Web3:", err);
+                showMessage("Failed to connect to the blockchain");
             }
-        }
-        try {
-            const accounts = await window.ethereum.request({
-                method: "eth_requestAccounts",
-            });
-            const w3 = new Web3(window.ethereum);
-            setWeb3(w3);
-            setAccount(accounts[0]);
-
-            // Always use baseMainnet
-            const pixelContract = new w3.eth.Contract(PixelBoardABI, NETWORKS.baseMainnet.contractAddress);
-            setContract(pixelContract);
-            await loadPixelsFromChain(pixelContract);
-
-            localStorage.setItem("pixelwar_account", accounts[0]);
-            localStorage.setItem("pixelwar_connected", "true");
-
-            showMessage("Connected and grid loaded!");
-        } catch (err) {
-            console.error(err);
-            showMessage("MetaMask connection error");
-        }
-    };
-
-    const disconnectWallet = () => {
-        setAccount(null);
-        setWeb3(null);
-        setContract(null);
-
-        // Sauvegarde état déconnecté
-        localStorage.removeItem("pixelwar_account");
-        localStorage.setItem("pixelwar_connected", "false");
-
-        showMessage("Wallet disconnected");
-    };
+        };
+        init();
+    }, [provider]);
 
     const loadPixelsFromChain = async (pixelContract) => {
         setLoading(true);
         const newPixels = Array(PIXEL_COUNT)
             .fill(null)
             .map(() => Array(PIXEL_COUNT).fill("#000000"));
+
         for (let y = 0; y < PIXEL_COUNT; y++) {
             try {
                 const row = await pixelContract.methods.getRow(y).call();
@@ -107,25 +76,15 @@ export default function PixelBoard() {
     const handlePixelClick = (x, y) => setSelectedPixel({ x, y });
 
     const applyColor = async (color) => {
-        if (!window.ethereum) return showMessage("Please install MetaMask!");
-        // Force switch to baseMainnet before applying
-        try {
-            await window.ethereum.request({
-                method: "wallet_switchEthereumChain",
-                params: [{ chainId: NETWORKS.baseMainnet.chainId }],
-            });
-        } catch (e) {
-            if (e.code === 4902) {
-                const { contractAddress, ...networkParams } = NETWORKS.baseMainnet;
-                await window.ethereum.request({
-                    method: "wallet_addEthereumChain",
-                    params: [networkParams],
-                });
-            } else {
-                return showMessage("Failed to switch to Base Mainnet");
-            }
+        if (!contract || !connected) {
+            showMessage("Connect wallet first!");
+            return;
         }
-        if (!contract || !account || selectedPixel.x === null) return;
+        if (selectedPixel.x === null) {
+            showMessage("Select a pixel first!");
+            return;
+        }
+
         const now = Date.now();
         if (now - lastPlaced < 60000) {
             const waitTime = Math.ceil((60000 - (now - lastPlaced)) / 1000);
@@ -147,109 +106,12 @@ export default function PixelBoard() {
             showMessage("Pixel placed!");
         } catch (err) {
             console.error(err);
-            showMessage("Error while sending pixel");
+            showMessage("Error placing pixel");
         }
     };
 
-    // Charger la grille même sans wallet
-    useEffect(() => {
-        const init = async () => {
-            try {
-                const provider = new Web3.providers.HttpProvider(
-                    NETWORKS.baseMainnet.rpcUrls[0]
-                );
-                const w3 = new Web3(provider);
-                const pixelContract = new w3.eth.Contract(
-                    PixelBoardABI,
-                    NETWORKS.baseMainnet.contractAddress
-                );
-                await loadPixelsFromChain(pixelContract);
-            } catch (err) {
-                console.error("Initial loading error:", err);
-            }
-        };
-        init();
-    }, []);
-
-    // Restaurer connexion si active
-    useEffect(() => {
-        const reconnect = async () => {
-            const connected = localStorage.getItem("pixelwar_connected");
-            if (connected === "true" && window.ethereum) {
-                try {
-                    const accounts = await window.ethereum.request({
-                        method: "eth_accounts",
-                    });
-                    if (accounts.length > 0) {
-                        await connectMetaMask();
-                    }
-                } catch (err) {
-                    console.error("Reconnection error:", err);
-                }
-            }
-        };
-        reconnect();
-    }, []);
-
     return (
-        <div
-            style={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                padding: "20px",
-                boxSizing: "border-box",
-            }}
-        >
-            <h1 style={{ fontSize: "26px", fontWeight: "600", marginBottom: "16px" }}>
-                🎨 On-Chain Pixel War
-            </h1>
-            {loading && (
-                <div style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "40px 0 30px 0"
-                }}>
-                    <div style={{
-                        width: 54,
-                        height: 54,
-                        border: "7px solid #e0e0e0",
-                        borderTop: "7px solid #2196F3",
-                        borderRadius: "50%",
-                        animation: "spin 1s linear infinite"
-                    }}
-                        className="pixelwar-spinner"
-                    />
-                    <div style={{ marginTop: 18, fontWeight: 600, color: "#2196F3", fontSize: "18px", letterSpacing: 1 }}>
-                        Loading grid…
-                    </div>
-                    <style>{`
-                        @keyframes spin {
-                            0% { transform: rotate(0deg); }
-                            100% { transform: rotate(360deg); }
-                        }
-                        .pixelwar-spinner {
-                            box-shadow: 0 2px 8px rgba(33,150,243,0.10);
-                        }
-                    `}</style>
-                </div>
-            )}
-
-            {!account ? (
-                <button onClick={connectMetaMask} style={buttonStyle("#4CAF50")}>
-                    Connect Wallet
-                </button>
-            ) : (
-                <button onClick={disconnectWallet} style={buttonStyle("#f44336")}>
-                    Disconnect ({account.slice(0, 6)}...{account.slice(-4)})
-                </button>
-            )}
-
-            {/* Plateau */}
+        <div style={{ padding: "20px", textAlign: "center" }}>
             {!loading && (
                 <div
                     style={{
@@ -257,11 +119,10 @@ export default function PixelBoard() {
                         gridTemplateColumns: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
                         gridTemplateRows: `repeat(${PIXEL_COUNT}, ${PIXEL_SIZE}px)`,
                         gap: "0px",
-                        background: "#2c2c2c",
                         padding: "6px",
                         borderRadius: "12px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         marginTop: "20px",
+                        justifyContent: "center",
                     }}
                 >
                     {pixels.map((row, y) =>
@@ -275,10 +136,10 @@ export default function PixelBoard() {
                                     backgroundColor: color,
                                     border:
                                         selectedPixel.x === x && selectedPixel.y === y
-                                            ? "1px solid #ff4444"
+                                            ? "2px solid #ff4444"
                                             : "1px solid #444",
-                                    boxSizing: "border-box",
                                     cursor: "pointer",
+                                    boxSizing: "border-box",
                                 }}
                             />
                         ))
@@ -294,10 +155,7 @@ export default function PixelBoard() {
                     gridAutoRows: "28px",
                     gap: "6px",
                     marginTop: "24px",
-                    padding: "12px",
-                    background: "#fff",
-                    borderRadius: "10px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    justifyContent: "center",
                 }}
             >
                 {PALETTE.map((color) => (
@@ -308,8 +166,7 @@ export default function PixelBoard() {
                             width: "28px",
                             height: "28px",
                             backgroundColor: color,
-                            border:
-                                selectedColor === color ? "3px solid #000" : "1px solid #ccc",
+                            border: selectedColor === color ? "3px solid #000" : "1px solid #ccc",
                             cursor: "pointer",
                             borderRadius: "6px",
                         }}
@@ -317,25 +174,18 @@ export default function PixelBoard() {
                 ))}
             </div>
 
-            {/* Bouton appliquer ou connect & apply */}
-            {/* Apply or Connect & Apply button */}
-            {!account ? (
-                <button
-                    onClick={async () => {
-                        await connectMetaMask();
-                    }}
-                    style={{ ...buttonStyle("#2196F3"), marginTop: "20px" }}
-                >
-                    Connect & Apply
-                </button>
-            ) : (
-                <button
-                    onClick={() => applyColor(selectedColor)}
-                    style={{ ...buttonStyle("#2196F3"), marginTop: "20px" }}
-                >
-                    Apply color
-                </button>
-            )}
+            <button
+                onClick={() => applyColor(selectedColor)}
+                style={{
+                    ...buttonStyle("#2196F3"),
+                    marginTop: "20px",
+                    opacity: connected ? 1 : 0.6,
+                    cursor: connected ? "pointer" : "not-allowed",
+                }}
+                disabled={!connected}
+            >
+                Apply color
+            </button>
 
             {message && (
                 <div
@@ -357,15 +207,13 @@ export default function PixelBoard() {
 }
 
 const buttonStyle = (bg) => ({
-    marginBottom: "16px",
     padding: "10px 20px",
+    margin: "10px",
     backgroundColor: bg,
     color: "#fff",
     border: "none",
     borderRadius: "8px",
-    fontSize: "15px",
-    fontWeight: "600",
     cursor: "pointer",
+    fontWeight: "600",
     boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
-    transition: "background 0.2s ease-in-out",
 });

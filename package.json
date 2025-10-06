@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@reown/appkit": "^1.8.8",
+    "@reown/appkit-adapter-wagmi": "^1.8.8",
     "@reown/walletkit": "^1.2.11",
+    "@tanstack/react-query": "^5.90.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
@@ -13,6 +16,8 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-scripts": "5.0.1",
+    "viem": "^2.37.13",
+    "wagmi": "^2.17.5",
     "web-vitals": "^2.1.4",
     "web3": "^4.16.0"
   },

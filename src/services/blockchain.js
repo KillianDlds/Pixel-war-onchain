@@ -1,11 +1,7 @@
 import Web3 from "web3";
-import { NETWORKS } from "../constants/networks";
 import PixelBoardABI from "../PixelWarABI.json";
 
 export const getWeb3 = (provider) => new Web3(provider);
-
-export const getContract = (web3, network) =>
-  new web3.eth.Contract(PixelBoardABI, NETWORKS[network].contractAddress);
 
 export const loadPixels = async (contract, pixelCount) => {
   const pixels = Array(pixelCount).fill(null).map(() => Array(pixelCount).fill("#000000"));
